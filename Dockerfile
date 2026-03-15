@@ -43,13 +43,12 @@ ENV LC_ALL=en_US.UTF-8
 # Original by ich777 (admin@minenet.at) — https://github.com/ich777/docker-fivem-server
 FROM baseimage AS fivemserver
 
-# Install dependencies and gotty web console.
-# gotty v1.0.1 is amd64-only — skip silently on arm64.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         xz-utils \
         unzip \
-        screen && \
+        screen \
+        wget && \
     ARCH="$(dpkg --print-architecture)" && \
     if [ "${ARCH}" = "amd64" ]; then \
         wget -q -O /tmp/gotty.tar.gz \
@@ -61,7 +60,6 @@ RUN apt-get update && \
     fi && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy FXServer start scripts from repo
 COPY scripts/ /opt/scripts/
 RUN chmod -R 770 /opt/scripts/
 
@@ -102,19 +100,18 @@ USER root
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        xz-utils \
-        unzip \
-        screen \
-        wget && \
-    ARCH="$(dpkg --print-architecture)" && \
-    if [ "${ARCH}" = "amd64" ]; then \
-        wget -q -O /tmp/gotty.tar.gz \
-            https://github.com/yudai/gotty/releases/download/v1.0.1/gotty_linux_amd64.tar.gz && \
-        tar -C /usr/bin/ -xf /tmp/gotty.tar.gz && \
-        rm -f /tmp/gotty.tar.gz; \
-    else \
-        echo "gotty not available for ${ARCH} — skipping"; \
-    fi && \
+        git \
+        curl \
+        jq \
+        ca-certificates \
+        gnupg && \
+    mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+        | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" \
+        > /etc/apt/sources.list.d/nodesource.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
 
 COPY mythic-entrypoint.sh /opt/scripts/mythic-entrypoint.sh
