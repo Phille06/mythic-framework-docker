@@ -66,7 +66,7 @@ jobs:
       # Tag logic:
       #   push to main/master  → :latest
       #   push tag v1.2.3      → :v1.2.3  AND  :latest
-      #   pull request         → :pr-<number>  (build only, not pushed)
+      #   pull request         → build only, not pushed
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -89,7 +89,8 @@ jobs:
 
       # ── 6. Build and push ─────────────────────────────────────────────────
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        id: build-and-push
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
