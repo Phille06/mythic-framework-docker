@@ -496,63 +496,25 @@ configure_txadmin() {
     step "Pre-configuring txAdmin..."
 
     local PROFILE_DIR="${TXDATA_DIR}/default"
-    mkdir -p "${PROFILE_DIR}/data"
+    mkdir -p "${PROFILE_DIR}/data" "${PROFILE_DIR}/logs"
 
-    # ── config.json — marks setup as complete ─────────────────────────────────
-    local CFG_FILE="${PROFILE_DIR}/config.json"
+    # ── config.json — v8 schema ───────────────────────────────────────────────
+    local CFG_FILE="${TXDATA_DIR}/config.json"
     if [[ ! -f "${CFG_FILE}" ]]; then
         cat > "${CFG_FILE}" << JSON
 {
-  "setupDone": true,
-  "defaults": {
-    "license": "${SERVER_KEY}",
-    "serverDataPath": "${SERVER_DIR}",
-    "cfgPath": "${SERVER_DIR}/server.cfg"
+  "version": 2,
+  "general": {
+    "serverName": "${SERVER_NAME}"
   },
   "server": {
-    "dataPath": "${SERVER_DIR}",
-    "cfgPath": "${SERVER_DIR}/server.cfg",
-    "onesync": "on",
-    "autostart": true,
-    "quiet": false
-  },
-  "webServer": {
-    "port": ${TXADMIN_PORT},
-    "allowedOrigins": null
-  },
-  "discordBot": {
-    "enabled": false
-  },
-  "playerController": {
-    "onJoinCheckBan": true,
-    "onJoinCheckWhitelist": false
+    "dataPath": "${SERVER_DIR}/"
   }
 }
 JSON
         info "txAdmin config.json created."
     else
         info "txAdmin config.json already exists — skipping."
-    fi
-
-    # ── admins.json — master admin account ────────────────────────────────────
-    local ADMINS_FILE="${PROFILE_DIR}/admins.json"
-    if [[ ! -f "${ADMINS_FILE}" ]]; then
-        local PW_HASH
-        PW_HASH=$(echo -n "${TXADMIN_MASTER_PASSWORD}" | sha256sum | awk '{print $1}')
-        cat > "${ADMINS_FILE}" << JSON
-[
-  {
-    "name": "${TXADMIN_MASTER_USERNAME}",
-    "master": true,
-    "password_hash": "${PW_HASH}",
-    "providers": {},
-    "permissions": []
-  }
-]
-JSON
-        info "txAdmin admin account '${TXADMIN_MASTER_USERNAME}' created."
-    else
-        info "txAdmin admins.json already exists — skipping."
     fi
 }
 
