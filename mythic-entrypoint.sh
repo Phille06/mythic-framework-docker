@@ -237,7 +237,6 @@ async function runTask(task) {
     // subpath (optional)      e.g. resources  — only copy this subdir
     if (action === 'download_github') {
         const srcUrl  = task.src;  // full URL
-        const ref     = task.ref || 'main';
         const dest    = R(task.dest);
         const subpath = task.subpath || null;
 
@@ -252,13 +251,35 @@ async function runTask(task) {
             return;
         }
 
-        // Use archive zip URL — works for any branch, no API rate limit
-        const zipUrl  = `https://github.com/${repo}/archive/refs/heads/${ref}.zip`;
-        const tmpZip  = path.join(TMP_DIR, `${repo.replace('/', '_')}_${ref}.zip`);
+        // FIX: try task.ref first ('main'), fall back to the other branch on 404.
+        // Some repos (e.g. cfx-server-data) use 'master' as the default branch.
+        const preferredBranch = task.ref || 'main';
+        const fallbackBranch  = preferredBranch === 'main' ? 'master' : 'main';
+
+        const zipUrl         = `https://github.com/${repo}/archive/refs/heads/${preferredBranch}.zip`;
+        const fallbackZipUrl = `https://github.com/${repo}/archive/refs/heads/${fallbackBranch}.zip`;
+        const tmpZip  = path.join(TMP_DIR, `${repo.replace('/', '_')}_${preferredBranch}.zip`);
         const tmpOut  = path.join(TMP_DIR, `${repo.replace('/', '_')}_out`);
 
-        console.log(`    GET ${zipUrl}`);
-        await download(zipUrl, tmpZip);
+        // Try preferred branch, fall back on 404
+        let usedBranch = preferredBranch;
+        try {
+            console.log(`    GET ${zipUrl}`);
+            await download(zipUrl, tmpZip);
+        } catch (e) {
+            if (e.message && e.message.includes('404')) {
+                console.log(`    WARN: branch '${preferredBranch}' not found, trying '${fallbackBranch}'...`);
+                usedBranch = fallbackBranch;
+                // Clean up the failed (empty) zip before retrying
+                try { fs.unlinkSync(tmpZip); } catch {}
+                console.log(`    GET ${fallbackZipUrl}`);
+                await download(fallbackZipUrl, tmpZip);
+            } else {
+                throw e;
+            }
+        }
+        console.log(`    Using branch: ${usedBranch}`);
+
         rmrf(tmpOut);
         unzipTo(tmpZip, tmpOut);
 
@@ -297,14 +318,24 @@ async function runTask(task) {
         const tmpOut = path.join(TMP_DIR, `unzip_${Date.now()}`);
         unzipTo(zipPath, tmpOut);
 
-        // Move each top-level entry into destDir
-        // (preserves the resource folder name inside the zip)
+        // Move each top-level entry into destDir.
+        // FIX: use cpSync + rmSync instead of renameSync to handle cross-device
+        // moves between /tmp (tmpfs) and /serverdata (bind mount).
         fs.mkdirSync(destDir, { recursive: true });
         for (const entry of fs.readdirSync(tmpOut)) {
-            const src  = path.join(tmpOut, entry);
-            const dst  = path.join(destDir, entry);
+            const src = path.join(tmpOut, entry);
+            const dst = path.join(destDir, entry);
             if (fs.existsSync(dst)) rmrf(dst);
-            fs.renameSync(src, dst);
+            try {
+                fs.renameSync(src, dst);        // fast path: same device
+            } catch (e) {
+                if (e.code === 'EXDEV') {       // cross-device: copy then delete
+                    fs.cpSync(src, dst, { recursive: true });
+                    rmrf(src);
+                } else {
+                    throw e;
+                }
+            }
         }
         rmrf(tmpOut);
         return;
@@ -317,7 +348,18 @@ async function runTask(task) {
         console.log(`    mv ${task.src} → ${task.dest}`);
         if (!fs.existsSync(src)) { console.warn(`    WARN: src not found: ${src}`); return; }
         fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.renameSync(src, dest);
+        // FIX: catch EXDEV (cross-device rename) and fall back to copy + delete.
+        // Occurs when src is under /tmp and dest is under /serverdata.
+        try {
+            fs.renameSync(src, dest);           // fast path: same device
+        } catch (e) {
+            if (e.code === 'EXDEV') {           // cross-device: copy then delete
+                fs.cpSync(src, dest, { recursive: true });
+                rmrf(src);
+            } else {
+                throw e;
+            }
+        }
         return;
     }
 
@@ -536,10 +578,6 @@ else
     info "Delete ${DEPLOY_LOCK} to force a fresh re-deploy."
 fi
 
-# =============================================================================
-# Hand off to the ich777 start.sh
-# Downloads/updates FXServer artifact from runtime.fivem.net, then starts FXServer
-# =============================================================================
 # =============================================================================
 # Hand off to the ich777 start.sh
 # Downloads/updates FXServer artifact from runtime.fivem.net, then starts FXServer
