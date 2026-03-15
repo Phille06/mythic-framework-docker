@@ -49,11 +49,15 @@ RUN apt-get update && \
         xz-utils \
         unzip \
         screen && \
-    # gotty web console — same version as ich777 original
-    wget -q -O /tmp/gotty.tar.gz \
-        https://github.com/yudai/gotty/releases/download/v1.0.1/gotty_linux_amd64.tar.gz && \
-    tar -C /usr/bin/ -xf /tmp/gotty.tar.gz && \
-    rm -f /tmp/gotty.tar.gz && \
+    ARCH="$(dpkg --print-architecture)" && \
+    if [ "${ARCH}" = "amd64" ]; then \
+        wget -q -O /tmp/gotty.tar.gz \
+            https://github.com/yudai/gotty/releases/download/v1.0.1/gotty_linux_amd64.tar.gz && \
+        tar -C /usr/bin/ -xf /tmp/gotty.tar.gz && \
+        rm -f /tmp/gotty.tar.gz; \
+    else \
+        echo "gotty not available for ${ARCH} — skipping"; \
+    fi && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy scripts directly from the repo
