@@ -41,9 +41,10 @@ ENV LC_ALL=en_US.UTF-8
 # ── Stage 2: FiveM server layer ───────────────────────────────────────────────
 # Replicates https://github.com/Phille06/mythic-framework-docker
 # Original by ich777 (admin@minenet.at) — https://github.com/ich777/docker-fivem-server
-# ── Stage 2: FiveM server layer ───────────────────────────────────────────────
 FROM baseimage AS fivemserver
 
+# Install dependencies and gotty web console.
+# gotty v1.0.1 is amd64-only — skip silently on arm64.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         xz-utils \
@@ -60,7 +61,7 @@ RUN apt-get update && \
     fi && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy scripts directly from the repo
+# Copy FXServer start scripts from repo
 COPY scripts/ /opt/scripts/
 RUN chmod -R 770 /opt/scripts/
 
