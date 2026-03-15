@@ -102,18 +102,19 @@ USER root
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        git \
-        curl \
-        jq \
-        ca-certificates \
-        gnupg && \
-    mkdir -p /etc/apt/keyrings && \
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
-        | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" \
-        > /etc/apt/sources.list.d/nodesource.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends nodejs && \
+        xz-utils \
+        unzip \
+        screen \
+        wget && \
+    ARCH="$(dpkg --print-architecture)" && \
+    if [ "${ARCH}" = "amd64" ]; then \
+        wget -q -O /tmp/gotty.tar.gz \
+            https://github.com/yudai/gotty/releases/download/v1.0.1/gotty_linux_amd64.tar.gz && \
+        tar -C /usr/bin/ -xf /tmp/gotty.tar.gz && \
+        rm -f /tmp/gotty.tar.gz; \
+    else \
+        echo "gotty not available for ${ARCH} — skipping"; \
+    fi && \
     rm -rf /var/lib/apt/lists/*
 
 COPY mythic-entrypoint.sh /opt/scripts/mythic-entrypoint.sh
