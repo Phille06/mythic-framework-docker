@@ -11,7 +11,7 @@
 #   Stage 2 — fivemserver
 #     Replicates: https://github.com/Phille06/mythic-framework-docker
 #     (Fork of ich777/docker-fivem-server — credit: ich777, admin@minenet.at)
-#     Adds xz-utils, screen, gotty web console
+#     Adds xz-utils, screen
 #     /opt/scripts/start.sh — auto-downloads FXServer from runtime.fivem.net
 #
 #   Stage 3 — mythic (published image)
@@ -39,8 +39,6 @@ ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
 # ── Stage 2: FiveM server layer ───────────────────────────────────────────────
-# Replicates https://github.com/Phille06/mythic-framework-docker
-# Original by ich777 (admin@minenet.at) — https://github.com/ich777/docker-fivem-server
 FROM baseimage AS fivemserver
 
 RUN apt-get update && \
@@ -49,15 +47,6 @@ RUN apt-get update && \
         unzip \
         screen \
         wget && \
-    ARCH="$(dpkg --print-architecture)" && \
-    if [ "${ARCH}" = "amd64" ]; then \
-        wget -q -O /tmp/gotty.tar.gz \
-            https://github.com/yudai/gotty/releases/download/v1.0.1/gotty_linux_amd64.tar.gz && \
-        tar -C /usr/bin/ -xf /tmp/gotty.tar.gz && \
-        rm -f /tmp/gotty.tar.gz; \
-    else \
-        echo "gotty not available for ${ARCH} — skipping"; \
-    fi && \
     rm -rf /var/lib/apt/lists/*
 
 COPY scripts/ /opt/scripts/
@@ -69,8 +58,6 @@ ENV SERVER_DIR="${DATA_DIR}/serverfiles"
 ENV GAME_CONFIG=""
 ENV SRV_ADR="https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/"
 ENV MANUAL_UPDATES=""
-ENV ENABLE_WEBCONSOLE="true"
-ENV GOTTY_PARAMS="-w --title-format FiveM"
 ENV UMASK=000
 ENV UID=99
 ENV GID=100
@@ -123,7 +110,5 @@ VOLUME ["${SERVER_DIR}", "/serverdata/txData"]
 EXPOSE 30120/tcp 30120/udp
 # txAdmin web panel
 EXPOSE 40120/tcp
-# gotty web console
-EXPOSE 8080/tcp
 
 ENTRYPOINT ["/opt/scripts/mythic-entrypoint.sh"]

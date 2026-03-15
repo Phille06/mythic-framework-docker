@@ -57,7 +57,6 @@ Docker pulls `phille06/mythic-framework-docker:latest` from Hub automatically.
 | Service | URL |
 |---|---|
 | txAdmin web panel | `http://your-server-ip:40120` |
-| gotty web console | `http://your-server-ip:9016` |
 | FiveM game port | `your-server-ip:30120` |
 
 Log in to txAdmin with `TXADMIN_MASTER_USERNAME` / `TXADMIN_MASTER_PASSWORD` from your `.env`.
