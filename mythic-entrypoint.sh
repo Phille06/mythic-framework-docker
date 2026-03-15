@@ -598,6 +598,10 @@ fi
 # =============================================================================
 info "Handing off to ich777 start.sh..."
 
+# ── Export txAdmin env vars so they are inherited by run.sh/FXServer ─────────
+export TXHOST_DATA_PATH="${TXDATA_DIR}"
+export TXHOST_TXA_PORT="${TXADMIN_PORT}"
+
 if [[ ! -f /opt/scripts/start.sh ]]; then
     error "$(cat <<'MSG'
 /opt/scripts/start.sh not found!
