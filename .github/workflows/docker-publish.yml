@@ -103,7 +103,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           # Cache layers in GitHub Actions cache for faster rebuilds
-          cache-from: type=gha
+          no-cache: true
+          #cache-from: type=gha
           cache-to: type=gha,mode=max
 
       # ── 7. Print image digest ─────────────────────────────────────────────
