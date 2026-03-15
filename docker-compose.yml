@@ -138,8 +138,6 @@ services:
       - "${FIVEM_PORT:-30120}:${FIVEM_PORT:-30120}/tcp"
       - "${FIVEM_PORT:-30120}:${FIVEM_PORT:-30120}/udp"
       - "${TXADMIN_PORT:-40120}:${TXADMIN_PORT:-40120}/tcp"
-      # gotty web console — http://host:9016
-      - "9016:8080/tcp"
 
     volumes:
       - ./data/serverfiles:/serverdata/serverfiles
