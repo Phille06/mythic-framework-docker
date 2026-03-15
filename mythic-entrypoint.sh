@@ -428,7 +428,7 @@ NODE_EOF
 #           (The recipe clones its own server.cfg from txAdminRecipe repo)
 # =============================================================================
 patch_server_cfg() {
-    step "Patching server.cfg with database connection strings..."
+    step "Patching server.cfg with environment variables..."
     local CFG="${SERVER_DIR}/server.cfg"
 
     if [[ ! -f "${CFG}" ]]; then
@@ -454,18 +454,32 @@ exec "configs/resources.cfg"
 CFG_EOF
     fi
 
-    # ── Inject DB strings if not already present ──────────────────────────────
-    if ! grep -q "mysql_connection_string" "${CFG}"; then
-        cat >> "${CFG}" << CFG_EOF
+    # ── Substitute {{placeholders}} from the Mythic recipe ────────────────────
+    local MYSQL_CONN="mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT:-3306}/${MYSQL_DATABASE}?charset=utf8mb4"
+    local MONGO_CONN="mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT:-27017}/${MONGO_DATABASE}?authSource=admin"
 
-# ── Database — injected by mythic-entrypoint.sh ───────────────────────────────
-set mysql_connection_string "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT:-3306}/${MYSQL_DATABASE}?charset=utf8mb4"
-set mongo_url "mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT:-27017}/${MONGO_DATABASE}?authSource=admin"
-CFG_EOF
-        info "DB connection strings appended to server.cfg."
-    else
-        info "server.cfg already has mysql_connection_string — skipping."
-    fi
+    sed -i \
+        -e "s|{{serverEndpoints}}|endpoint_add_tcp \"0.0.0.0:${FIVEM_PORT}\"\nendpoint_add_udp \"0.0.0.0:${FIVEM_PORT}\"|g" \
+        -e "s|{{svLicense}}|${SERVER_KEY}|g" \
+        -e "s|{{maxClients}}|48|g" \
+        -e "s|{{serverName}}|${SERVER_NAME}|g" \
+        -e "s|{{recipeName}}|Mythic Framework|g" \
+        -e "s|{{recipeAuthor}}|Mythic|g" \
+        -e "s|{{recipeDescription}}|Powered by Mythic Framework|g" \
+        -e "s|{{dbConnectionString}}|${MYSQL_CONN}|g" \
+        -e "s|{{addPrincipalsMaster}}||g" \
+        "${CFG}"
+
+    info "Placeholders substituted in server.cfg."
+
+    # ── Patch MongoDB connection strings ──────────────────────────────────────
+    sed -i \
+        -e "s|mongodb://localhost:27017/?readPreference=primary&appname=MongoDB%20Compass&ssl=false|${MONGO_CONN}|g" \
+        -e "s|set mongodb_auth_database \"auth\"|set mongodb_auth_database \"${MONGO_DATABASE}\"|g" \
+        -e "s|set mongodb_game_database \"fivem\"|set mongodb_game_database \"${MONGO_DATABASE}\"|g" \
+        "${CFG}"
+
+    info "MongoDB connection strings patched."
 
     # ── Ensure sv_licenseKey is present ──────────────────────────────────────
     if ! grep -q "sv_licenseKey" "${CFG}"; then
