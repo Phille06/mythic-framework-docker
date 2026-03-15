@@ -32,6 +32,8 @@ on:
 
 env:
   IMAGE_NAME: phille06/mythic-framework-docker
+  # Opt into Node.js 24 for all actions (required from June 2nd 2026)
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-and-push:

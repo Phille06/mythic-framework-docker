@@ -60,7 +60,8 @@ RUN apt-get update && \
     cp -r /tmp/fivem-src/scripts/. /opt/scripts/ && \
     chmod -R 770 /opt/scripts/ && \
     rm -rf /tmp/fivem-src && \
-    apt-get remove -y git && \
+    # Remove git (|| true prevents exit code 5 if already auto-removed)
+    apt-get remove -y git || true && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
