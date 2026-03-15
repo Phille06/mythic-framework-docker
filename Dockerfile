@@ -41,29 +41,24 @@ ENV LC_ALL=en_US.UTF-8
 # ── Stage 2: FiveM server layer ───────────────────────────────────────────────
 # Replicates https://github.com/Phille06/mythic-framework-docker
 # Original by ich777 (admin@minenet.at) — https://github.com/ich777/docker-fivem-server
+# ── Stage 2: FiveM server layer ───────────────────────────────────────────────
 FROM baseimage AS fivemserver
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         xz-utils \
         unzip \
-        screen \
-        git && \
+        screen && \
     # gotty web console — same version as ich777 original
     wget -q -O /tmp/gotty.tar.gz \
         https://github.com/yudai/gotty/releases/download/v1.0.1/gotty_linux_amd64.tar.gz && \
     tar -C /usr/bin/ -xf /tmp/gotty.tar.gz && \
     rm -f /tmp/gotty.tar.gz && \
-    # Pull scripts from the Phille06 fork
-    git clone --depth=1 https://github.com/Phille06/mythic-framework-docker.git /tmp/fivem-src && \
-    mkdir -p /opt/scripts && \
-    cp -r /tmp/fivem-src/scripts/. /opt/scripts/ && \
-    chmod -R 770 /opt/scripts/ && \
-    rm -rf /tmp/fivem-src && \
-    # Remove git (|| true prevents exit code 5 if already auto-removed)
-    apt-get remove -y git || true && \
-    apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
+
+# Copy scripts directly from the repo
+COPY scripts/ /opt/scripts/
+RUN chmod -R 770 /opt/scripts/
 
 # Match ich777 env vars exactly
 ENV DATA_DIR="/serverdata"
