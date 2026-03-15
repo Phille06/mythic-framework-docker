@@ -1,0 +1,11 @@
+# Sensitive — never commit
+.env
+
+# All server data lives here — don't commit it
+data/
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo

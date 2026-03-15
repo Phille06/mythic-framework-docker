@@ -1,0 +1,158 @@
+# =============================================================================
+# FiveM + txAdmin + Mythic Framework — Docker Compose
+# =============================================================================
+#
+# Credits:
+#   FiveM Docker image originally by ich777 (admin@minenet.at)
+#     https://github.com/ich777/docker-fivem-server
+#   Forked and extended by Phille06
+#     https://github.com/Phille06/mythic-framework-docker
+#   Published image: https://hub.docker.com/r/phille06/mythic-framework-docker
+#
+# This compose file pulls the pre-built image from Docker Hub.
+# No Dockerfile or local build required — just .env + docker compose up -d.
+#
+# All data is bind-mounted relative to this docker-compose.yml:
+#   ./data/mariadb/       ← MariaDB databases
+#   ./data/mongodb/       ← MongoDB databases
+#   ./data/serverfiles/   ← FXServer artifact + resources + server.cfg
+#   ./data/txData/        ← txAdmin profiles, bans, logs, whitelist
+#
+# Usage:
+#   cp .env.example .env && nano .env
+#   docker compose up -d
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # MariaDB 11 — primary relational database (oxmysql, framework tables)
+  # ---------------------------------------------------------------------------
+  mariadb:
+    image: mariadb:11
+    container_name: fivem_mariadb
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE:      ${MYSQL_DATABASE}
+      MYSQL_USER:          ${MYSQL_USER}
+      MYSQL_PASSWORD:      ${MYSQL_PASSWORD}
+    volumes:
+      - ./data/mariadb:/var/lib/mysql
+    networks:
+      - fivem_net
+    healthcheck:
+      test:
+        [
+          "CMD", "healthcheck.sh",
+          "--su-mysql", "--connect", "--innodb_initialized"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 40s
+
+  # ---------------------------------------------------------------------------
+  # MongoDB 7 — document store for select Mythic resources
+  # ---------------------------------------------------------------------------
+  mongodb:
+    image: mongo:7
+    container_name: fivem_mongodb
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE:      ${MONGO_INITDB_DATABASE}
+    volumes:
+      - ./data/mongodb:/data/db
+    networks:
+      - fivem_net
+    healthcheck:
+      test:
+        [
+          "CMD", "mongosh", "--quiet",
+          "--eval", "db.adminCommand('ping').ok"
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # FiveM — pulled from Docker Hub: phille06/mythic-framework-docker
+  #
+  # On first start: deploys Mythic recipe, writes server.cfg, configures txAdmin
+  # On every start: ich777's start.sh checks for FXServer artifact updates
+  # ---------------------------------------------------------------------------
+  fivem:
+    image: phille06/mythic-framework-docker:latest
+    container_name: fivem_server
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    environment:
+      # ── ich777 / Phille06 base-image variables ─────────────────────────────
+      SRV_ADR:        "https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/"
+      GAME_CONFIG:    "server.cfg"
+      SERVER_KEY:     ${SERVER_LICENSE_KEY}
+      MANUAL_UPDATES: ${MANUAL_UPDATES:-}
+      UID:            ${PUID:-99}
+      GID:            ${PGID:-100}
+      START_VARS:     "+set txAdminPort ${TXADMIN_PORT:-40120} +set txDataPath /serverdata/txData"
+
+      # ── Mythic bootstrap variables ─────────────────────────────────────────
+      TXADMIN_PORT:   ${TXADMIN_PORT:-40120}
+      FIVEM_PORT:     ${FIVEM_PORT:-30120}
+      SERVER_NAME:    ${SERVER_NAME:-My Mythic Server}
+
+      MYSQL_HOST:     mariadb
+      MYSQL_PORT:     3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER:     ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+      MONGO_HOST:     mongodb
+      MONGO_PORT:     27017
+      MONGO_DATABASE: ${MONGO_INITDB_DATABASE}
+      MONGO_USER:     ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+
+      TXADMIN_MASTER_USERNAME: ${TXADMIN_MASTER_USERNAME:-admin}
+      TXADMIN_MASTER_PASSWORD: ${TXADMIN_MASTER_PASSWORD}
+
+      RECIPE_URL: ${RECIPE_URL:-https://raw.githubusercontent.com/Mythic-Framework/txAdminRecipe/main/mythic-stable.yaml}
+
+    ports:
+      - "${FIVEM_PORT:-30120}:${FIVEM_PORT:-30120}/tcp"
+      - "${FIVEM_PORT:-30120}:${FIVEM_PORT:-30120}/udp"
+      - "${TXADMIN_PORT:-40120}:${TXADMIN_PORT:-40120}/tcp"
+      # gotty web console — http://host:9016
+      - "9016:8080/tcp"
+
+    volumes:
+      - ./data/serverfiles:/serverdata/serverfiles
+      - ./data/txData:/serverdata/txData
+
+    networks:
+      - fivem_net
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  fivem_net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br_fivem
