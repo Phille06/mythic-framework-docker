@@ -105,12 +105,12 @@ services:
     environment:
       # ── ich777 / Phille06 base-image variables ─────────────────────────────
       SRV_ADR:        "https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/"
-      GAME_CONFIG:    "server.cfg"
+      GAME_CONFIG:    ${GAME_CONFIG:-}
       SERVER_KEY:     ${SERVER_LICENSE_KEY}
       MANUAL_UPDATES: ${MANUAL_UPDATES:-}
       UID:            ${PUID:-99}
       GID:            ${PGID:-100}
-      START_VARS:     "+set txAdminPort ${TXADMIN_PORT:-40120} +set txDataPath /serverdata/txData"
+      START_VARS: "+set TXHOST_TXA_PORT ${TXADMIN_PORT:-40120} +set TXHOST_DATA_PATH /serverdata/txData"
 
       # ── Mythic bootstrap variables ─────────────────────────────────────────
       TXADMIN_PORT:   ${TXADMIN_PORT:-40120}

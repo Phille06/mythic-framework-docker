@@ -495,7 +495,7 @@ CFG_EOF
 configure_txadmin() {
     step "Pre-configuring txAdmin..."
 
-    local PROFILE_DIR="${TXDATA_DIR}/profile-default"
+    local PROFILE_DIR="${TXDATA_DIR}/default"
     mkdir -p "${PROFILE_DIR}/data"
 
     # ── config.json — marks setup as complete ─────────────────────────────────
