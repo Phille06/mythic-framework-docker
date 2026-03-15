@@ -169,26 +169,41 @@ function parseRecipe(text) {
 }
 
 // ── HTTP/S download with redirect following ───────────────────────────────────
+// Uses a recursive approach: on redirect, close + delete the current file
+// and start a fresh download to a new WriteStream at the same dest path.
 function download(url, dest, hops = 0) {
     return new Promise((resolve, reject) => {
-        if (hops > 8) return reject(new Error('Too many redirects'));
-        const proto  = url.startsWith('https') ? https : http;
+        if (hops > 10) return reject(new Error('Too many redirects'));
+        const proto = url.startsWith('https') ? https : http;
         fs.mkdirSync(path.dirname(dest), { recursive: true });
-        const file   = fs.createWriteStream(dest);
-        const headers = { 'User-Agent': 'fivem-mythic-deployer/3.0' };
-        proto.get(url, { headers }, res => {
+        const file = fs.createWriteStream(dest);
+        let settled = false;
+        const done = (err) => {
+            if (settled) return;
+            settled = true;
+            if (err) reject(err); else resolve();
+        };
+        const req = proto.get(url, { headers: { 'User-Agent': 'fivem-mythic-deployer/3.0' } }, res => {
             if ([301, 302, 307, 308].includes(res.statusCode)) {
-                file.close(() => { try { fs.unlinkSync(dest); } catch {} });
-                return download(res.headers.location, dest, hops + 1).then(resolve).catch(reject);
+                res.resume(); // drain to free socket
+                file.close(() => {
+                    try { fs.unlinkSync(dest); } catch {}
+                    download(res.headers.location, dest, hops + 1).then(resolve).catch(reject);
+                });
+                settled = true;
+                return;
             }
             if (res.statusCode !== 200) {
+                res.resume();
                 file.close(() => { try { fs.unlinkSync(dest); } catch {} });
-                return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
+                done(new Error(`HTTP ${res.statusCode} for ${url}`));
+                return;
             }
             res.pipe(file);
-            file.on('finish', () => file.close(resolve));
-            file.on('error',  e  => { file.close(); reject(e); });
-        }).on('error', e => { file.close(); reject(e); });
+            file.on('finish', () => file.close(() => done(null)));
+            file.on('error',  e => { try { fs.unlinkSync(dest); } catch {} done(e); });
+        });
+        req.on('error', e => { file.close(() => { try { fs.unlinkSync(dest); } catch {} }); done(e); });
     });
 }
 
@@ -361,7 +376,7 @@ async function runTask(task) {
         }
     }
     console.log(`\nDone. ok=${ok}  failed=${failed}`);
-    if (failed > 0) { console.warn('Some tasks failed — check output above.'); process.exit(1); }
+    if (failed > 0) { console.warn('Some tasks failed — check output above.'); }
 })();
 NODE_EOF
 }
@@ -525,5 +540,27 @@ fi
 # Hand off to the ich777 start.sh
 # Downloads/updates FXServer artifact from runtime.fivem.net, then starts FXServer
 # =============================================================================
+# =============================================================================
+# Hand off to the ich777 start.sh
+# Downloads/updates FXServer artifact from runtime.fivem.net, then starts FXServer
+# =============================================================================
 info "Handing off to ich777 start.sh..."
+
+if [[ ! -f /opt/scripts/start.sh ]]; then
+    error "$(cat <<'MSG'
+/opt/scripts/start.sh not found!
+
+This means the 'scripts/' folder was missing from your GitHub repo when the
+Docker image was built. The Dockerfile clones your repo and copies scripts/
+into /opt/scripts/ — if the folder is empty or absent, start.sh won't exist.
+
+Fix:
+  1. Copy the scripts/ folder from https://github.com/Phille06/docker-fivem-server
+     into your mythic-framework-docker repo root.
+  2. Commit and push — GitHub Actions will rebuild and push a fixed image.
+  3. On your server: docker compose pull fivem && docker compose up -d fivem
+MSG
+)"
+fi
+
 exec /opt/scripts/start.sh "$@"
