@@ -136,9 +136,6 @@ services:
       MONGO_USER:       ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_PASSWORD:   ${MONGO_INITDB_ROOT_PASSWORD}
 
-      TXADMIN_MASTER_USERNAME: ${TXADMIN_MASTER_USERNAME:-admin}
-      TXADMIN_MASTER_PASSWORD: ${TXADMIN_MASTER_PASSWORD}
-
       RECIPE_URL: ${RECIPE_URL:-https://raw.githubusercontent.com/Mythic-Framework/txAdminRecipe/main/mythic-stable.yaml}
 
     ports:

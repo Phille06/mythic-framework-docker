@@ -32,13 +32,11 @@ mkdir -p "${SERVER_DIR}" "${TXDATA_DIR}"
 # ── Required env var checks ───────────────────────────────────────────────────
 : "${SERVER_KEY:?SERVER_KEY (Cfx.re license) must be set in .env}"
 : "${MYSQL_PASSWORD:?MYSQL_PASSWORD must be set in .env}"
-: "${TXADMIN_MASTER_PASSWORD:?TXADMIN_MASTER_PASSWORD must be set in .env}"
 
 # Defaults
 TXADMIN_PORT="${TXADMIN_PORT:-40120}"
 FIVEM_PORT="${FIVEM_PORT:-30120}"
 SERVER_NAME="${SERVER_NAME:-My Mythic Server}"
-TXADMIN_MASTER_USERNAME="${TXADMIN_MASTER_USERNAME:-admin}"
 RECIPE_URL="${RECIPE_URL:-https://raw.githubusercontent.com/Mythic-Framework/txAdminRecipe/main/mythic-stable.yaml}"
 
 # =============================================================================
@@ -594,7 +592,6 @@ if [[ ! -f "${DEPLOY_LOCK}" ]]; then
     step "========================================================"
     step " Bootstrap complete — lock file written."
     step " txAdmin URL : http://localhost:${TXADMIN_PORT}"
-    step " Login       : ${TXADMIN_MASTER_USERNAME} / (your .env password)"
     step "========================================================"
     echo ""
 else

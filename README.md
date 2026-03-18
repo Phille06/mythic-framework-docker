@@ -40,7 +40,6 @@ Minimum required values:
 | `MYSQL_ROOT_PASSWORD` | Strong password |
 | `MYSQL_PASSWORD` | Strong password |
 | `MONGO_INITDB_ROOT_PASSWORD` | Strong password |
-| `TXADMIN_MASTER_PASSWORD` | Password to log in to txAdmin |
 
 ### 3. Start
 
@@ -58,8 +57,6 @@ Docker pulls `phille06/mythic-framework-docker:latest` from Hub automatically.
 |---|---|
 | txAdmin web panel | `http://your-server-ip:40120` |
 | FiveM game port | `your-server-ip:30120` |
-
-Log in to txAdmin with `TXADMIN_MASTER_USERNAME` / `TXADMIN_MASTER_PASSWORD` from your `.env`.
 
 ---
 
@@ -140,8 +137,6 @@ docker compose down                   # stop (data safe in ./data/)
 | `SERVER_NAME` | `My Mythic Server` | Server browser display name |
 | `FIVEM_PORT` | `30120` | Game port (TCP + UDP) |
 | `TXADMIN_PORT` | `40120` | txAdmin web panel port |
-| `TXADMIN_MASTER_USERNAME` | `admin` | txAdmin login username |
-| `TXADMIN_MASTER_PASSWORD` | — | **Required.** txAdmin login password |
 | `MYSQL_*` | — | MariaDB credentials |
 | `MONGO_*` | — | MongoDB credentials |
 | `RECIPE_URL` | Mythic stable | txAdmin recipe YAML URL |
