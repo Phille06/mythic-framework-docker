@@ -375,6 +375,13 @@ async function runTask(task) {
     if (action === 'remove_path') {
         const p = R(task.path);
         console.log(`    rm -rf ${task.path}`);
+
+        const sqlSrc = path.join(p, 'mythic', 'mythic.sql');
+        if (fs.existsSync(sqlSrc)) {
+            fs.copyFileSync(sqlSrc, '/tmp/mythic.sql');
+            console.log(`    saved mythic.sql to /tmp/mythic.sql`);
+        }
+
         rmrf(p);
         return;
     }
