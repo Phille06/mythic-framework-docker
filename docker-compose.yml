@@ -26,7 +26,7 @@
 services:
 
   # ---------------------------------------------------------------------------
-  # MariaDB 11 — primary relational database (oxmysql, framework tables)
+  # MariaDB 11 — primary relational database (oxmysql, framework tables), Uncomment the ports section if you need external access to MariaDB
   # ---------------------------------------------------------------------------
   mariadb:
     image: mariadb:11
@@ -44,6 +44,8 @@ services:
       - ./data/mariadb:/var/lib/mysql
     networks:
       - fivem_net
+    # ports:
+    #   - "3306:3306"
     healthcheck:
       test:
         [
@@ -56,7 +58,7 @@ services:
       start_period: 40s
 
   # ---------------------------------------------------------------------------
-  # MongoDB 7 — document store for select Mythic resources
+  # MongoDB 7 — document store for select Mythic resources, Uncomment the ports section if you need external access to MongoDB
   # ---------------------------------------------------------------------------
   mongodb:
     image: mongo:7
@@ -73,6 +75,8 @@ services:
       - ./data/mongodb:/data/db
     networks:
       - fivem_net
+    # ports:
+    #   - "27017:27017"
     healthcheck:
       test:
         [

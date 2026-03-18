@@ -145,7 +145,7 @@ if [ ! -z "${GAME_CONFIG}" ]; then
     if [ ! -f "${SERVER_DIR}/server.cfg" ]; then
         echo "---No server.cfg found, downloading...---"
         cd ${SERVER_DIR}
-        wget -q -nc --show-progress --progress=bar:force:noscroll server.cfg "https://raw.githubusercontent.com/ich777/docker-fivem-server/master/configs/server.cfg"
+        wget -q -nc --show-progress --progress=bar:force:noscroll server.cfg "https://raw.githubusercontent.com/Phille06/docker-fivem-server/refs/heads/master/configs/server.cfg"
     fi
 fi
 chmod -R ${DATA_PERM} ${DATA_DIR}
