@@ -512,6 +512,7 @@ CFG_EOF
         -e "s|{{recipeDescription}}|Powered by Mythic Framework|g" \
         -e "s|{{dbConnectionString}}|${MYSQL_CONN}|g" \
         -e "s|{{addPrincipalsMaster}}||g" \
+        -e "s|set steam_webApiKey \"setme\"|set steam_webApiKey \"${STEAM_WEB_API_KEY:-}\"|g" \
         "${CFG}"
 
     info "Placeholders substituted in server.cfg."
@@ -519,7 +520,7 @@ CFG_EOF
     # ── Patch MongoDB connection strings ──────────────────────────────────────
     local MONGO_AUTH_CONN="mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT:-27017}/${MONGO_DATABASE}_auth?authSource=admin"
     local MONGO_GAME_CONN="mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT:-27017}/${MONGO_DATABASE}_game?authSource=admin"
-    
+
     sed -i \
         -e "s|set mongodb_auth_url \"mongodb://.*\"|set mongodb_auth_url \"${MONGO_AUTH_CONN}\"|g" \
         -e "s|set mongodb_auth_database \".*\"|set mongodb_auth_database \"${MONGO_DATABASE}_auth\"|g" \
