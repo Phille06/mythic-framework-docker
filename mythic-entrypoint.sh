@@ -499,9 +499,8 @@ exec "configs/resources.cfg"
 CFG_EOF
     fi
 
-    # ── Substitute {{placeholders}} from the Mythic recipe ────────────────────
+    # ── Patch Mysql connection string and more ────────────────────
     local MYSQL_CONN="mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT:-3306}/${MYSQL_DATABASE}?charset=utf8mb4"
-    local MONGO_CONN="mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT:-27017}/${MONGO_DATABASE}?authSource=admin"
 
     sed -i \
         -e "s|{{serverEndpoints}}|endpoint_add_tcp \"0.0.0.0:${FIVEM_PORT}\"\nendpoint_add_udp \"0.0.0.0:${FIVEM_PORT}\"|g" \
@@ -518,10 +517,14 @@ CFG_EOF
     info "Placeholders substituted in server.cfg."
 
     # ── Patch MongoDB connection strings ──────────────────────────────────────
+    local MONGO_AUTH_CONN="mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT:-27017}/${MONGO_DATABASE}_auth?authSource=admin"
+    local MONGO_GAME_CONN="mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT:-27017}/${MONGO_DATABASE}_game?authSource=admin"
+    
     sed -i \
-        -e "s|mongodb://localhost:27017/?readPreference=primary&appname=MongoDB%20Compass&ssl=false|${MONGO_CONN}|g" \
-        -e "s|set mongodb_auth_database \"auth\"|set mongodb_auth_database \"${MONGO_DATABASE}\"|g" \
-        -e "s|set mongodb_game_database \"fivem\"|set mongodb_game_database \"${MONGO_DATABASE}\"|g" \
+        -e "s|set mongodb_auth_url \"mongodb://.*\"|set mongodb_auth_url \"${MONGO_AUTH_CONN}\"|g" \
+        -e "s|set mongodb_auth_database \".*\"|set mongodb_auth_database \"${MONGO_DATABASE}_auth\"|g" \
+        -e "s|set mongodb_game_url \"mongodb://.*\"|set mongodb_game_url \"${MONGO_GAME_CONN}\"|g" \
+        -e "s|set mongodb_game_database \".*\"|set mongodb_game_database \"${MONGO_DATABASE}_game\"|g" \
         "${CFG}"
 
     info "MongoDB connection strings patched."
