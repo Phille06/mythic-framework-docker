@@ -424,7 +424,38 @@ NODE_EOF
 }
 
 # =============================================================================
-# STEP 2 — Inject DB connection strings into the recipe-provided server.cfg
+# STEP 2 — Import mythic.sql into MariaDB
+# =============================================================================
+import_database() {
+    step "Importing mythic.sql into MariaDB..."
+
+    local SQL_FILE="${SERVER_DIR}/tmp/mythic/mythic.sql"
+
+    if [[ ! -f "${SQL_FILE}" ]]; then
+        warn "mythic.sql not found at ${SQL_FILE} — skipping database import."
+        return
+    fi
+
+    local RETRIES=10 WAIT=5
+    for i in $(seq 1 ${RETRIES}); do
+        if mysql \
+            -h "${MYSQL_HOST}" \
+            -P "${MYSQL_PORT:-3306}" \
+            -u "${MYSQL_USER}" \
+            -p"${MYSQL_PASSWORD}" \
+            "${MYSQL_DATABASE}" < "${SQL_FILE}" 2>/dev/null; then
+            info "mythic.sql imported successfully."
+            return
+        fi
+        warn "Attempt ${i}/${RETRIES} — MariaDB not ready yet, retrying in ${WAIT}s..."
+        sleep ${WAIT}
+    done
+
+    warn "Could not import mythic.sql after ${RETRIES} attempts — skipping."
+}
+
+# =============================================================================
+# STEP 3 — Inject DB connection strings into the recipe-provided server.cfg
 #           (The recipe clones its own server.cfg from txAdminRecipe repo)
 # =============================================================================
 patch_server_cfg() {
@@ -490,7 +521,7 @@ CFG_EOF
 }
 
 # =============================================================================
-# STEP 3 — Pre-configure txAdmin (skip browser wizard)
+# STEP 4 — Pre-configure txAdmin (skip browser wizard)
 # =============================================================================
 configure_txadmin() {
     step "Pre-configuring txAdmin..."
@@ -538,6 +569,7 @@ if [[ ! -f "${DEPLOY_LOCK}" ]]; then
         warn "Some resources may be missing. Check logs above."
     fi
 
+    import_database
     patch_server_cfg
     configure_txadmin
 
