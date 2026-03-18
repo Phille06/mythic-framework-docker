@@ -91,7 +91,7 @@ RUN apt-get update && \
         curl \
         jq \
         ca-certificates \
-        gnupg && \
+        gnupg \
         mariadb-client && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
