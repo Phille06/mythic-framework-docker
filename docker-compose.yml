@@ -29,7 +29,7 @@ services:
   # MariaDB 11 — primary relational database (oxmysql, framework tables), Uncomment the ports section if you need external access to MariaDB
   # ---------------------------------------------------------------------------
   mariadb:
-    image: mariadb:11
+    image: mariadb:latest
     container_name: fivem_mariadb
     restart: unless-stopped
     dns:
@@ -61,7 +61,7 @@ services:
   # MongoDB 7 — document store for select Mythic resources, Uncomment the ports section if you need external access to MongoDB
   # ---------------------------------------------------------------------------
   mongodb:
-    image: mongo:7
+    image: mongo:latest
     container_name: fivem_mongodb
     restart: unless-stopped
     dns:
