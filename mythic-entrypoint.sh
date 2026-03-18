@@ -499,7 +499,7 @@ configure_txadmin() {
     mkdir -p "${PROFILE_DIR}/data" "${PROFILE_DIR}/logs"
 
     # ── config.json — v8 schema ───────────────────────────────────────────────
-    local CFG_FILE="${TXDATA_DIR}/config.json"
+    local CFG_FILE="${TXDATA_DIR}/default/config.json"
     if [[ ! -f "${CFG_FILE}" ]]; then
         cat > "${CFG_FILE}" << JSON
 {
