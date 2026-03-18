@@ -66,6 +66,14 @@ deploy_recipe() {
     info "Running Node.js recipe deployer..."
     node /tmp/deploy_recipe.mjs "${RECIPE_FILE}" "${SERVER_DIR}"
     info "Recipe deployment complete."
+
+    # ── Save mythic.sql before tmp is cleaned up by the recipe ───────────────
+    if [[ -f "${SERVER_DIR}/tmp/mythic/mythic.sql" ]]; then
+        cp "${SERVER_DIR}/tmp/mythic/mythic.sql" /tmp/mythic.sql
+        info "mythic.sql saved to /tmp/mythic.sql"
+    else
+        warn "mythic.sql not found — database import will be skipped."
+    fi
 }
 
 # ── Write the Node.js recipe deployer to /tmp ─────────────────────────────────
@@ -429,7 +437,7 @@ NODE_EOF
 import_database() {
     step "Importing mythic.sql into MariaDB..."
 
-    local SQL_FILE="${SERVER_DIR}/tmp/mythic/mythic.sql"
+    local SQL_FILE="/tmp/mythic.sql"
 
     if [[ ! -f "${SQL_FILE}" ]]; then
         warn "mythic.sql not found at ${SQL_FILE} — skipping database import."
@@ -445,6 +453,7 @@ import_database() {
             -p"${MYSQL_PASSWORD}" \
             "${MYSQL_DATABASE}" < "${SQL_FILE}" 2>/dev/null; then
             info "mythic.sql imported successfully."
+            rm -f "${SQL_FILE}"
             return
         fi
         warn "Attempt ${i}/${RETRIES} — MariaDB not ready yet, retrying in ${WAIT}s..."
