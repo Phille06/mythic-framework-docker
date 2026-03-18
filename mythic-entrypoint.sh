@@ -64,14 +64,6 @@ deploy_recipe() {
     info "Running Node.js recipe deployer..."
     node /tmp/deploy_recipe.mjs "${RECIPE_FILE}" "${SERVER_DIR}"
     info "Recipe deployment complete."
-
-    # ── Save mythic.sql before tmp is cleaned up by the recipe ───────────────
-    if [[ -f "${SERVER_DIR}/tmp/mythic/mythic.sql" ]]; then
-        cp "${SERVER_DIR}/tmp/mythic/mythic.sql" /tmp/mythic.sql
-        info "mythic.sql saved to /tmp/mythic.sql"
-    else
-        warn "mythic.sql not found — database import will be skipped."
-    fi
 }
 
 # ── Write the Node.js recipe deployer to /tmp ─────────────────────────────────
